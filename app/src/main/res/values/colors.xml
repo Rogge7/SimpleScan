@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple">#6200EE</color>
+    <color name="purple_dark">#3700B3</color>
+    <color name="teal">#03DAC5</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="status_connected">#4CAF50</color>
+    <color name="status_disconnected">#9E9E9E</color>
+    <color name="status_error">#F44336</color>
+    <color name="bg_input">#FFFFFF</color>
+</resources>

@@ -1,0 +1,8 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.SimpleScan" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/purple</item>
+        <item name="colorPrimaryDark">@color/purple_dark</item>
+        <item name="colorAccent">@color/teal</item>
+        <item name="android:statusBarColor" tools:targetApi="21">@color/purple_dark</item>
+    </style>
+</resources>

@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">扫码传电脑</string>
+    <string name="hint_server_ip">服务器IP（电脑内网IP）</string>
+    <string name="hint_server_port">端口</string>
+    <string name="btn_connect">连接</string>
+    <string name="btn_disconnect">断开</string>
+    <string name="hint_scan_input">扫码到此处（自动发送）</string>
+    <string name="status_disconnected">未连接</string>
+    <string name="status_connecting">连接中...</string>
+    <string name="status_connected">已连接</string>
+    <string name="status_error">错误：%1$s</string>
+</resources>
