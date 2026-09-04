@@ -28,14 +28,22 @@ jobs:
         with:
           gradle-version: 8.2
 
+      - name: Debug - List files
+        run: |
+          echo "=== 仓库根目录 ==="
+          ls -la
+          echo "=== 找 settings.gradle ==="
+          find . -name "settings.gradle" -not -path "*/.git/*"
+          echo "=== 找 build.gradle ==="
+          find . -name "build.gradle" -not -path "*/.git/*"
+
       - name: Build APK
-        working-directory: SimpleScan
         run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SimpleScan-debug-apk
-          path: SimpleScan/app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 90
           if-no-files-found: error
