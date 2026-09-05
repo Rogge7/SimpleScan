@@ -30,6 +30,7 @@ import java.util.Locale;
  * - 回车即把当前文本通过 Socket 发到电脑端，末尾加 \n
  * - 长连接保持，断开自动重连下次发送
  * - 配置（IP+端口）持久化到 SharedPreferences
+ * - 焦点策略：仅在扫码处理完成后聚焦扫码框，不干扰用户编辑 IP/端口
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -47,6 +48,9 @@ public class MainActivity extends AppCompatActivity {
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+
+    // 防重入：一次扫码只处理一次
+    private volatile boolean isProcessing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,30 +72,31 @@ public class MainActivity extends AppCompatActivity {
 
         btnConnect.setOnClickListener(v -> doConnect());
 
-        // 扫码框：监听回车（或IME actionSend）
-        etScan.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEND ||
-                    actionId == EditorInfo.IME_ACTION_DONE ||
-                    actionId == EditorInfo.IME_ACTION_GO ||
-                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER
-                            && event.getAction() == KeyEvent.ACTION_DOWN)) {
-                onScanEntered();
-                return true;
-            }
-            return false;
-        });
-
-        // 物理回车兜底（部分PDA扫码枪不走IME action）
+        // 扫码框：物理回车键按下触发（消费事件防止失焦）
         etScan.setOnKeyListener((v, keyCode, event) -> {
             if (event.getAction() == KeyEvent.ACTION_DOWN
                     && keyCode == KeyEvent.KEYCODE_ENTER) {
                 onScanEntered();
+                return true; // 消费, 防止冒泡导致焦点丢失
+            }
+            return false;
+        });
+
+        // 兼容 IME action 回车（部分虚拟键盘/PDA）
+        etScan.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE
+                    || actionId == EditorInfo.IME_ACTION_GO
+                    || actionId == EditorInfo.IME_ACTION_SEND
+                    || actionId == EditorInfo.IME_ACTION_NEXT
+                    || (event != null && event.getAction() == KeyEvent.ACTION_DOWN
+                            && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                onScanEntered();
                 return true;
             }
             return false;
         });
 
-        // 进入即聚焦扫码框
+        // 首次进入聚焦扫码框（仅这一次，不抢用户后续编辑焦点）
         etScan.requestFocus();
     }
 
@@ -136,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 mainHandler.post(() -> {
                     setStatus("已连接 " + ip + ":" + port, true);
                     btnConnect.setText(R.string.btn_disconnect);
+                    // 连接成功后聚焦扫码框（合理：连接好就准备扫码）
                     etScan.requestFocus();
                 });
             } catch (Exception e) {
@@ -148,10 +154,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onScanEntered() {
+        if (isProcessing) return;
+        isProcessing = true;
+
         String text = etScan.getText().toString();
-        if (text.isEmpty()) return;
-        etScan.setText("");
+        if (text.isEmpty()) {
+            isProcessing = false;
+            return;
+        }
+
+        // 先聚焦再清空，避免清空时焦点飘走
         etScan.requestFocus();
+        etScan.setText("");
 
         // 没连接就先尝试连一次
         synchronized (lock) {
@@ -161,15 +175,19 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        final String code = text;
         new Thread(() -> {
-            boolean ok = send(text + "\n");
+            boolean ok = send(code + "\n");
             String now = timeFmt.format(new Date());
             mainHandler.post(() -> {
                 if (ok) {
-                    tvLog.setText("[" + now + "] " + text + "\n" + tvLog.getText());
+                    tvLog.setText("[" + now + "] " + code + "\n" + tvLog.getText());
                 } else {
-                    tvLog.setText("[" + now + "] [失败] " + text + "\n" + tvLog.getText());
+                    tvLog.setText("[" + now + "] [失败] " + code + "\n" + tvLog.getText());
                 }
+                // 扫码处理完聚焦扫码框（用户还在连续扫码）
+                etScan.requestFocus();
+                isProcessing = false;
             });
         }).start();
     }
@@ -182,7 +200,6 @@ public class MainActivity extends AppCompatActivity {
                 outputStream.flush();
                 return true;
             } catch (Exception e) {
-                // 断开重连
                 disconnect();
                 return false;
             }
