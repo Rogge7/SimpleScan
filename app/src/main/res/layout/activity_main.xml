@@ -35,28 +35,32 @@
             android:focusable="true"
             android:focusableInTouchMode="true" />
 
-        <!-- 最近发送记录（紧跟扫描框，方便看刚发的） -->
+        <!-- 最近发送记录（固定高度，垂直滚动条，保留最新日志） -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="最近发送"
+            android:text="最近发送（最新在顶部）"
             android:textColor="#444"
             android:textSize="14sp" />
 
         <TextView
             android:id="@+id/tvLog"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
+            android:layout_height="160dp"
             android:layout_marginTop="4dp"
             android:padding="10dp"
             android:background="#FAFAFA"
             android:scrollbars="vertical"
+            android:scrollbarFadeDuration="0"
+            android:scrollbarDefaultDelayBeforeFade="0"
+            android:scrollbarSize="8dp"
+            android:fadeScrollbars="false"
             android:text="(无)"
             android:textColor="#666"
             android:textSize="13sp"
             android:gravity="top"
-            android:maxLines="100"
+            android:singleLine="false"
             android:ellipsize="none" />
 
         <!-- 分隔线 -->
